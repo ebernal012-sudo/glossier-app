@@ -322,7 +322,7 @@ function render() {
 
             <section class="feature">
 
-                <img src=archive.jpg"
+                <img src="archive.jpg"
                     alt="Archivo editorial de belleza y moda">
 
                 <div class="panel">
@@ -615,7 +615,7 @@ function render() {
                 <p class="points">${points}</p>
 
                 <p>
-                    Gana puntos con compras y reseñas !.
+                    Gana puntos con compras y reseñas.
                 </p>
 
                 <progress
@@ -689,7 +689,7 @@ function render() {
                         <div class="product">
 
                             <img
-                                src="img/${p.id}.jpg"
+                                src="${p.id}.jpg"
                                 alt="${p.name}">
 
                             ${p.name}
