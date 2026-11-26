@@ -84,7 +84,7 @@ function cards() {
 
                 <article class="product">
 
-                    <img src="img/${p.id}.jpg" alt="${p.name}">
+                    <img src="${p.id}.jpg" alt="${p.name}">
 
                     <span class="muted">${p.cat}</span>
 
@@ -297,7 +297,7 @@ function render() {
 
                 </div>
 
-                <img src="img/editorial.jpg"
+                <img src="editorial.jpg"
                     alt="Revistas editoriales de Glossier">
 
             </section>
@@ -322,7 +322,7 @@ function render() {
 
             <section class="feature">
 
-                <img src="img/archive.jpg"
+                <img src=archive.jpg"
                     alt="Archivo editorial de belleza y moda">
 
                 <div class="panel">
