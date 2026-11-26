@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Glossier MX · Concepto</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="chatbot.css">
+    <script defer src="script.js"></script>
+    <script defer src="chatbot.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <a class="logo" href="#inicio">
+            Glossier.<small>MX</small>
+        </a>
+
+        <nav id="nav">
+            <a href="#inicio">Inicio</a>
+            <a href="#tienda">Tienda</a>
+            <a href="#probador">Probador</a>
+            <a href="#comunidad">Comunidad</a>
+            <a href="#recompensas">Recompensas</a>
+            <a href="#perfil">Perfil</a>
+        </nav>
+
+        <button id="bag">
+            Bolsa (<span id="count">0</span>)
+        </button>
+    </header>
+
+    <main id="app"></main>
+
+    <dialog id="cart">
+
+        <button class="close"
+            onclick="this.closest('dialog').close()">
+            Cerrar ×
+        </button>
+
+        <h2>Tu bolsa</h2>
+
+        <div id="cartItems"></div>
+
+    </dialog>
+
+    <footer>
+        Glossier MX  · México 
+    </footer>
+
+    <!-- ===== CHATBOT ===== -->
+    <button id="chatToggle" aria-label="Abrir chat de ayuda" aria-expanded="false" aria-controls="chatPanel">
+        <span id="chatToggleLabel">Chat</span>
+    </button>
+
+    <section id="chatPanel" role="dialog" aria-label="Asistente Glossier MX" hidden>
+        <div class="chat-head">
+            <div>
+                <strong>Asistente Glossier</strong>
+                <small>Te respondo al momento</small>
+            </div>
+            <button id="chatClose" aria-label="Cerrar chat">×</button>
+        </div>
+
+        <div id="chatLog" aria-live="polite"></div>
+
+        <div id="chatChips"></div>
+
+        <div class="chat-form">
+            <input id="chatInput" type="text" placeholder="Escribe tu pregunta" autocomplete="off" aria-label="Tu mensaje">
+            <button id="chatSend" type="button">Enviar</button>
+        </div>
+    </section>
+
+</body>
+</html>
