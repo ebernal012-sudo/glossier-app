@@ -1,6 +1,67 @@
 const $ = s => document.querySelector(s);
 const app = $('#app');
 
+/* ESTILOS DEL FORMULARIO DE PAGO */
+
+const payStyles = document.createElement('style');
+
+payStyles.textContent = `
+    #cart {
+        max-height: 90vh;
+        overflow-y: auto;
+        max-width: min(520px, 94vw);
+    }
+
+    .pay h3 {
+        margin: 1.4rem 0 0.4rem;
+    }
+
+    .pay label {
+        display: block;
+        margin: 0.7rem 0;
+    }
+
+    .pay input,
+    .pay select {
+        display: block;
+        width: 100%;
+        margin-top: 0.3rem;
+        padding: 0.6rem 0.7rem;
+        font: inherit;
+        box-sizing: border-box;
+    }
+
+    .pay-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+    }
+
+    .summary {
+        margin: 1rem 0;
+    }
+
+    .summary div {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.2rem 0;
+    }
+
+    .summary .total {
+        font-weight: bold;
+        border-top: 1px solid currentColor;
+        margin-top: 0.4rem;
+        padding-top: 0.5rem;
+    }
+
+    .pay-error {
+        color: #b3261e;
+        min-height: 1.2em;
+    }
+`;
+
+document.head.appendChild(payStyles);
+
 /* PRODUCTOS */
 
 const products = [
@@ -32,6 +93,22 @@ const products = [
         price: 490,
         colors: ['#49332c', '#85634e', '#292323']
     }
+];
+
+/* ENVÍO */
+
+const FREE_SHIPPING = 999;
+const SHIPPING_COST = 99;
+
+const STATES = [
+    'Aguascalientes', 'Baja California', 'Baja California Sur',
+    'Campeche', 'Chiapas', 'Chihuahua', 'Ciudad de México',
+    'Coahuila', 'Colima', 'Durango', 'Estado de México',
+    'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán',
+    'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla',
+    'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa',
+    'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz',
+    'Yucatán', 'Zacatecas'
 ];
 
 /* ALMACENAMIENTO LOCAL */
@@ -178,9 +255,20 @@ function reward(n) {
     save('points', points);
 }
 
+const subtotal = () => bag.reduce(
+    (s, x) => s + products.find(p => p.id === x.id).price, 0
+);
+
+const shipping = () =>
+    bag.length === 0 || subtotal() >= FREE_SHIPPING
+        ? 0
+        : SHIPPING_COST;
+
+const grandTotal = () => subtotal() + shipping();
+
 function showCart() {
 
-    $('#cartItems').innerHTML = bag.map((x, i) => {
+    const items = bag.map((x, i) => {
 
         let p = products.find(p => p.id === x.id);
 
@@ -198,23 +286,187 @@ function showCart() {
             </div>
         `;
 
-    }).join('') + `
+    }).join('');
 
-        <h3>
-            Total: ${money(
-                bag.reduce(
-                    (s, x) => s + products.find(
-                        p => p.id === x.id
-                    ).price, 0
-                )
-            )}
-        </h3>
+    if (!bag.length) {
 
-        ${bag.length
-            ? '<button class="primary" onclick="checkout()">Simular compra</button>'
-            : 'Tu bolsa está vacía.'
-        }
-    `;
+        $('#cartItems').innerHTML = 'Tu bolsa está vacía.';
+
+    } else {
+
+        $('#cartItems').innerHTML = items + `
+
+            <div class="summary">
+
+                <div>
+                    <span>Subtotal</span>
+                    <span>${money(subtotal())}</span>
+                </div>
+
+                <div>
+                    <span>Envío</span>
+                    <span>${shipping() ? money(shipping()) : 'Gratis'}</span>
+                </div>
+
+                <div class="total">
+                    <span>Total</span>
+                    <span>${money(grandTotal())}</span>
+                </div>
+
+                ${shipping() ? `
+                    <p class="muted">
+                        Envío gratis en compras desde ${money(FREE_SHIPPING)}.
+                    </p>
+                ` : ''}
+
+            </div>
+
+            <form id="payForm" class="pay" novalidate>
+
+                <h3>Dirección de envío</h3>
+
+                <label>
+                    Nombre completo
+                    <input id="shipName"
+                        autocomplete="name"
+                        value="${esc(profile)}">
+                </label>
+
+                <label>
+                    Teléfono (10 dígitos)
+                    <input id="shipPhone"
+                        inputmode="numeric"
+                        maxlength="10"
+                        autocomplete="tel">
+                </label>
+
+                <label>
+                    Calle y número
+                    <input id="shipStreet"
+                        autocomplete="address-line1">
+                </label>
+
+                <label>
+                    Colonia
+                    <input id="shipColony"
+                        autocomplete="address-line2">
+                </label>
+
+                <div class="pay-row">
+
+                    <label>
+                        Código postal
+                        <input id="shipZip"
+                            inputmode="numeric"
+                            maxlength="5"
+                            autocomplete="postal-code">
+                    </label>
+
+                    <label>
+                        Ciudad
+                        <input id="shipCity"
+                            autocomplete="address-level2">
+                    </label>
+
+                </div>
+
+                <label>
+                    Estado
+                    <select id="shipState">
+                        <option value="">Elige un estado</option>
+                        ${STATES.map(s => `
+                            <option>${s}</option>
+                        `).join('')}
+                    </select>
+                </label>
+
+                <label>
+                    Referencias (opcional)
+                    <input id="shipRefs"
+                        placeholder="Entre qué calles, color de la casa…">
+                </label>
+
+                <h3>Método de pago</h3>
+
+                <p class="notice">
+                    Pago simulado. No escribas los datos de tu tarjeta real.
+                    Puedes usar 4242 4242 4242 4242.
+                </p>
+
+                <label>
+                    Nombre en la tarjeta
+                    <input id="cardName" autocomplete="off">
+                </label>
+
+                <label>
+                    Número de tarjeta
+                    <input id="cardNumber"
+                        inputmode="numeric"
+                        maxlength="19"
+                        placeholder="4242 4242 4242 4242"
+                        autocomplete="off">
+                </label>
+
+                <div class="pay-row">
+
+                    <label>
+                        Vence (MM/AA)
+                        <input id="cardExp"
+                            inputmode="numeric"
+                            maxlength="5"
+                            placeholder="12/30"
+                            autocomplete="off">
+                    </label>
+
+                    <label>
+                        CVV
+                        <input id="cardCvv"
+                            inputmode="numeric"
+                            maxlength="3"
+                            placeholder="123"
+                            autocomplete="off">
+                    </label>
+
+                </div>
+
+                <p id="payError" class="pay-error" role="alert"></p>
+
+                <button class="primary">
+                    Pagar ${money(grandTotal())}
+                </button>
+
+            </form>
+        `;
+
+        const digits = (id, max) => {
+            $(id).oninput = e => {
+                e.target.value = e.target.value
+                    .replace(/\D/g, '')
+                    .slice(0, max);
+            };
+        };
+
+        digits('#shipPhone', 10);
+        digits('#shipZip', 5);
+        digits('#cardCvv', 3);
+
+        $('#cardNumber').oninput = e => {
+            e.target.value = e.target.value
+                .replace(/\D/g, '')
+                .slice(0, 16)
+                .replace(/(.{4})/g, '$1 ')
+                .trim();
+        };
+
+        $('#cardExp').oninput = e => {
+            let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+            e.target.value = v.length > 2
+                ? v.slice(0, 2) + '/' + v.slice(2)
+                : v;
+        };
+
+        $('#payForm').onsubmit = checkout;
+    }
 
     if (!$('#cart').open) {
         $('#cart').showModal();
@@ -228,23 +480,134 @@ function removeItem(i) {
     showCart();
 }
 
-function checkout() {
+function checkout(e) {
 
-    const total = bag.reduce(
-        (s, x) => s + products.find(
-            p => p.id === x.id
-        ).price, 0
-    );
+    e.preventDefault();
 
-    reward(Math.floor(total / 10));
+    const error = $('#payError');
 
-    bag = [];
+    const fail = (id, msg) => {
+        error.textContent = msg;
+        $(id).focus();
+    };
 
-    save('bag', bag);
-    update();
+    const ship = {
+        name: $('#shipName').value.trim(),
+        phone: $('#shipPhone').value,
+        street: $('#shipStreet').value.trim(),
+        colony: $('#shipColony').value.trim(),
+        zip: $('#shipZip').value,
+        city: $('#shipCity').value.trim(),
+        state: $('#shipState').value,
+        refs: $('#shipRefs').value.trim()
+    };
 
-    $('#cartItems').textContent =
-        'Compra simulada. Tus puntos se han actualizado. No se realizó ningún cobro.';
+    const cardName = $('#cardName').value.trim();
+    const number = $('#cardNumber').value.replace(/\D/g, '');
+    const [mm, yy] = $('#cardExp').value.split('/');
+    const cvv = $('#cardCvv').value;
+
+    const month = +mm;
+    const year = 2000 + +yy;
+    const now = new Date();
+
+    /* VALIDAR ENVÍO */
+
+    if (ship.name.length < 3)
+        return fail('#shipName', 'Escribe tu nombre completo.');
+
+    if (ship.phone.length !== 10)
+        return fail('#shipPhone', 'El teléfono debe tener 10 dígitos.');
+
+    if (ship.street.length < 3)
+        return fail('#shipStreet', 'Escribe tu calle y número.');
+
+    if (ship.colony.length < 2)
+        return fail('#shipColony', 'Escribe tu colonia.');
+
+    if (ship.zip.length !== 5)
+        return fail('#shipZip', 'El código postal debe tener 5 dígitos.');
+
+    if (ship.city.length < 2)
+        return fail('#shipCity', 'Escribe tu ciudad.');
+
+    if (!ship.state)
+        return fail('#shipState', 'Elige tu estado.');
+
+    /* VALIDAR TARJETA */
+
+    if (cardName.length < 3)
+        return fail('#cardName', 'Escribe el nombre que aparece en la tarjeta.');
+
+    if (number.length !== 16)
+        return fail('#cardNumber', 'El número de tarjeta debe tener 16 dígitos.');
+
+    if (!month || month > 12 || !yy || yy.length !== 2)
+        return fail('#cardExp', 'Escribe el vencimiento como MM/AA.');
+
+    if (year < now.getFullYear()
+        || (year === now.getFullYear() && month < now.getMonth() + 1))
+        return fail('#cardExp', 'La tarjeta está vencida.');
+
+    if (cvv.length !== 3)
+        return fail('#cardCvv', 'El CVV debe tener 3 dígitos.');
+
+    error.textContent = '';
+
+    const brand = number[0] === '4' ? 'Visa'
+        : number[0] === '5' ? 'Mastercard'
+        : 'Tarjeta';
+
+    const last4 = number.slice(-4);
+    const total = grandTotal();
+    const shipCost = shipping();
+    const pointsEarned = Math.floor(subtotal() / 10);
+
+    const orderId = 'GL-' + Math.floor(100000 + Math.random() * 900000);
+
+    const button = $('#payForm button');
+    button.disabled = true;
+    button.textContent = 'Procesando pago…';
+
+    setTimeout(() => {
+
+        reward(pointsEarned);
+
+        bag = [];
+
+        save('bag', bag);
+        update();
+
+        $('#cartItems').innerHTML = `
+
+            <h3>Pago simulado aprobado</h3>
+
+            <p><b>Pedido ${orderId}</b></p>
+
+            <p>
+                ${esc(brand)} terminada en ${last4}<br>
+                Total: ${money(total)}
+                (envío ${shipCost ? money(shipCost) : 'gratis'})
+            </p>
+
+            <h3>Enviaremos a</h3>
+
+            <p>
+                ${esc(ship.name)}<br>
+                ${esc(ship.street)}, ${esc(ship.colony)}<br>
+                ${esc(ship.city)}, ${esc(ship.state)}, C.P. ${esc(ship.zip)}<br>
+                Tel. ${esc(ship.phone)}
+                ${ship.refs ? '<br>Ref.: ' + esc(ship.refs) : ''}
+            </p>
+
+            <p class="notice">
+                Ganaste ${pointsEarned} puntos.
+                No se realizó ningún cobro real y no se guardó
+                ningún dato de tu tarjeta ni de tu dirección.
+            </p>
+        `;
+
+    }, 1200);
 }
 
 $('#bag').onclick = showCart;
